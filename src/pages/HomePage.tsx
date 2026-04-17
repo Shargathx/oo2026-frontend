@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Product } from "../models/Product";
+import type { Category } from "../models/Category";
 
 function HomePage() {
     // renderdamine -> esmakordne komponendi pealetulek (nt uuele lehele minnes tehakse üldine lehe renderdus)
@@ -11,20 +12,28 @@ function HomePage() {
     const [page, setPage] = useState(0);
     const [size, setSize] = useState(3);
     const [sort, setSort] = useState("id,asc");
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [activeCategoryId, setActiveCateogoryId] = useState(0);
+
+    useEffect(() => {
+        fetch(import.meta.env.VITE_BACK_URL + "/categories") // päring aadressil, peab machima BE getMappinguga
+            .then(res => res.json()) // kogu tagastus
+            .then(json => setCategories(json)) // response-i body / sisu
+    }, []);
 
     // let products = []; JS nii lubab, aga:
     // products = json
 
     // uef -> enter
     useEffect(() => {
-        fetch(import.meta.env.VITE_BACK_URL + `/products?page=${page}&size=${size}&sort=${sort}`) // päring aadressil, võtab sisse .env keskkonda pandud info
+        fetch(import.meta.env.VITE_BACK_URL + `/products?page=${page}&size=${size}&sort=${sort}&activeCategoryId=${activeCategoryId}`) // päring aadressil, võtab sisse .env keskkonda pandud info
             .then(res => res.json()) // kogu tagastus
             .then(json => {
                 setProducts(json.content);
                 setTotalElements(json.totalElements);
                 setTotalPages(json.totalPages);
             }) // response-i body / sisu
-    }, [page, size, sort]); // kui siin midagi muutub, laetakse lehe sisu uuesti, tuuakse uue lehe info
+    }, [page, size, sort, activeCategoryId]); // kui siin midagi muutub, laetakse lehe sisu uuesti, tuuakse uue lehe info
 
     const sizeHandler = (newSize: number) => {
         setSize(newSize);
@@ -34,6 +43,24 @@ function HomePage() {
     const sortHandler = (newSort: string) => {
         setSort(newSort);
         setPage(0);
+    }
+
+    const activeCategoryHandler = (categoryId: number) => {
+        setActiveCateogoryId(categoryId);
+        setPage(0);
+    }
+
+    const addToCart = () => (product: Product) => {
+        const cart = JSON.parse(localStorage.getItem("cart") || "[]"); // võtame info
+        const foundProduct = cart.find(cartProduct => cartProduct.product.id === product.id);
+        if (foundProduct) {
+            foundProduct.quantity++;
+        }
+        else {
+            cart.push({ product: product, quantity: 1 });
+        }
+        cart.push(); // lisame ükshaaval asju juurde
+        localStorage.setItem("cart", JSON.stringify(cart)); // anname info
     }
 
     return (
@@ -52,6 +79,25 @@ function HomePage() {
             <button onClick={() => sortHandler("name,desc")}>Sorteeri Z-A</button>
             <button onClick={() => sortHandler("price,asc")}>Sorteeri hind kasvavalt</button>
             <button onClick={() => sortHandler("price,desc")}>Sorteeri hind kahanevalt</button>
+
+            <br />
+
+            <button style={activeCategoryId === 0 ? { fontWeight: "bold" } : undefined}
+                onClick={() => activeCategoryHandler(0)}>
+                Kõik kategooriad
+            </button>
+
+            <br />
+
+            {products.map(product =>
+                <div key={product.id}>
+                    {product.name} - {product.price}€
+                </div>)}
+
+            {categories.map(category =>
+                <button style={activeCategoryId === category.id ? { fontWeight: "bold" } : undefined}
+                    onClick={() => activeCategoryHandler(Number(category.id))}>{category.name}</button>
+            )}
 
             {products.map(product =>
                 <div key={product.id}>
