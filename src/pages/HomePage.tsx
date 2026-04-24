@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Product } from "../models/Product";
 import type { Category } from "../models/Category";
+import type { OrderRow } from "../models/OrderRow";
 
 function HomePage() {
     // renderdamine -> esmakordne komponendi pealetulek (nt uuele lehele minnes tehakse üldine lehe renderdus)
@@ -50,14 +51,14 @@ function HomePage() {
         setPage(0);
     }
 
-    const addToCart = () => (product: Product) => {
-        const cart = JSON.parse(localStorage.getItem("cart") || "[]"); // võtame info
-        const foundProduct = cart.find(cartProduct => cartProduct.product.id === product.id);
+    const addToCart = (clickedProduct: Product) => {
+        const cart: OrderRow[] = JSON.parse(localStorage.getItem("cart") || "[]"); // võtame info
+        const foundProduct = cart.find(orderRow => orderRow.product.id === clickedProduct.id);
         if (foundProduct) {
             foundProduct.quantity++;
         }
         else {
-            cart.push({ product: product, quantity: 1 });
+            cart.push({ product: clickedProduct, quantity: 1 });
         }
         cart.push(); // lisame ükshaaval asju juurde
         localStorage.setItem("cart", JSON.stringify(cart)); // anname info
@@ -92,6 +93,7 @@ function HomePage() {
             {products.map(product =>
                 <div key={product.id}>
                     {product.name} - {product.price}€
+                    <button onClick={() => addToCart(product)}> Lisa ostukorvi </button>
                 </div>)}
 
             {categories.map(category =>

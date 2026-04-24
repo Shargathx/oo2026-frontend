@@ -9,6 +9,8 @@ lerna-debug.log*
 
 workingPath (copy)
 .env
+.env.development
+.env.prod
 
 node_modules
 dist
